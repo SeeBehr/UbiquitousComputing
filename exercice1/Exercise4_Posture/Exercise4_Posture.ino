@@ -39,6 +39,8 @@ void loop() {
   float gx, gy, gz;
   float roll, pitch, heading;
   unsigned long microsNow;
+  int temperature;
+  bool alert = false;
 
   // check if it's time to read data and update the filter
   microsNow = micros();
@@ -59,6 +61,21 @@ void loop() {
     // update the filter, which computes orientation
     filter.updateIMU(gx, gy, gz, ax, ay, az);
 
+    // Read the temperature from the IMU sensor
+    if (IMU.temperatureAvailable()) {
+      IMU.readTemperature(temperature);
+
+      // Print the temperature to the serial monitor
+      Serial.print("Temperature: ");
+      Serial.print(temperature);
+      Serial.println(" °C");
+
+      // Control RGB LED based on the temperature
+      if (!(temperature >= 20 && temperature <= 32)) {
+        alert = true;
+      }
+    }
+
     // print the heading, pitch and roll
     roll = filter.getRoll();
     pitch = filter.getPitch();
@@ -72,14 +89,12 @@ void loop() {
     Serial.println(roll);
     counter = 0;
     }
-    if (pitch > -100 && pitch < -80) {
-      digitalWrite(LEDR, LOW);
-      digitalWrite(LEDG, HIGH);
-    } else {
-      digitalWrite(LEDR, HIGH);
-      digitalWrite(LEDG, LOW);
+    if (pitch < -100 && pitch > -80) {
+      alert = true;
     }
 
+    digitalWrite(LEDR, alert);
+    digitalWrite(LEDG, !alert);
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
     counter++;
