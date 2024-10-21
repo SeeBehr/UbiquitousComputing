@@ -23,7 +23,7 @@ jobs:
       run: |
         arduino-cli core update-index
         arduino-cli core install arduino:mbed_nano
-        arduino-cli lib install Arduino_LSM6DSOX WiFiNINA
+        arduino-cli lib install Arduino_LSM6DSOX WiFiNINA PDM
 
     - name: Compile all Arduino sketches
       run: |
