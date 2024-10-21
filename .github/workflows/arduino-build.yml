@@ -22,11 +22,11 @@ jobs:
     - name: Install Arduino cores and libraries
       run: |
         arduino-cli core update-index
-        arduino-cli core install arduino:mbed_rp2040
+        arduino-cli core install arduino:mbed_nano
         arduino-cli lib install Arduino_LSM6DSOX WiFiNINA
 
     - name: Compile all Arduino sketches
       run: |
         for sketch in $(find . -name "*.ino"); do
-          arduino-cli compile --fqbn arduino:mbed_rp2040:rp2040 "$sketch"
+          arduino-cli compile --fqbn arduino:mbed_nano:nanorp2040connect "$sketch"
         done
