@@ -10,6 +10,9 @@ int counter;
 void setup() {
   pinMode(LEDR, OUTPUT);
   pinMode(LEDG, OUTPUT);
+
+  digitalWrite(LEDR, LOW);
+  digitalWrite(LEDG, LOW);
   Serial.begin(1200);
 
   while(!Serial);
@@ -41,6 +44,8 @@ void loop() {
   unsigned long microsNow;
   int temperature;
   bool alert = false;
+  int ledvalue;
+  int ledvalue2;
 
   // check if it's time to read data and update the filter
   microsNow = micros();
@@ -93,8 +98,17 @@ void loop() {
       alert = true;
     }
 
-    digitalWrite(LEDR, alert);
-    digitalWrite(LEDG, !alert);
+    if (alert) {
+      ledvalue = 255;
+      ledvalue2 = 0;
+    } else {
+      ledvalue = 0;
+      ledvalue2 = 255;
+    }
+
+
+    analogWrite(LEDR, ledvalue);
+    analogWrite(LEDG, ledvalue2);
     // increment previous time, so we keep proper pace
     microsPrevious = microsPrevious + microsPerReading;
     counter++;
