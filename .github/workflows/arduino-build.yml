@@ -1,0 +1,34 @@
+name: Arduino Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up Arduino CLI
+      uses: arduino/setup-arduino-cli@v2
+      with:
+        version: latest
+
+    - name: Install Arduino cores and libraries
+      run: |
+        arduino-cli core update-index
+        arduino-cli core install arduino:avr
+        arduino-cli lib install Arduino_LSM6DSOX WiFiNINA
+
+    - name: Compile all Arduino sketches
+      run: |
+        for sketch in $(find . -name "*.ino"); do
+          arduino-cli compile --fqbn arduino:avr:nano "$sketch"
+        done
