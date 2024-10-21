@@ -1,0 +1,4 @@
+Arduino_LSM6DSOX
+WiFiNINA
+Adafruit Zero PDM Library
+Madgwick

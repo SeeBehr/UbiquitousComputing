@@ -19,11 +19,21 @@ jobs:
     - name: Install Arduino CLI
       uses: arduino/setup-arduino-cli@v2
 
-    - name: Install Arduino cores and libraries
+    - name: Install Arduino cores
       run: |
         arduino-cli core update-index
         arduino-cli core install arduino:mbed_nano
-        arduino-cli lib install Arduino_LSM6DSOX WiFiNINA 'Adafruit Zero PDM Library'
+
+    - name: Install Arduino libraries from libraries.txt
+      run: |
+        if [ -f libraries.txt ]; then
+          while IFS= read -r lib; do
+            arduino-cli lib install "$lib"
+          done < libraries.txt
+        else
+          echo "libraries.txt not found!"
+          exit 1
+        fi
 
     - name: Compile all Arduino sketches
       run: |
