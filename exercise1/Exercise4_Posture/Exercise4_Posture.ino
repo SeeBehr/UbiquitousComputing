@@ -3,7 +3,6 @@
 #include <MadgwickAHRS.h>
 
 Madgwick filter;
-unsigned long microsPerReading, microsPrevious;
 float accelScale, gyroScale;
 int counter;
 
@@ -29,10 +28,6 @@ void setup()
   Serial.print(IMU.gyroscopeSampleRate());
   Serial.println("Hz");
   Serial.println();
-
-  // initialize variables to pace updates to correct rate
-  microsPerReading = 104;
-  microsPrevious = micros();
 }
 
 void loop()
@@ -46,75 +41,67 @@ void loop()
   int temperature;
   bool alert = false;
 
-  // check if it's time to read data and update the filter
-  microsNow = micros();
-  if (microsNow - microsPrevious >= microsPerReading)
+  // read raw data from IMU
+  IMU.readAcceleration(aix, aiy, aiz);
+  IMU.readGyroscope(gix, giy, giz);
+
+  // convert from raw data to gravity and degrees/second units
+  ax = convertRawAcceleration(aix);
+  ay = convertRawAcceleration(aiy);
+  az = convertRawAcceleration(aiz);
+  gx = convertRawGyro(gix);
+  gy = convertRawGyro(giy);
+  gz = convertRawGyro(giz);
+
+  // update the filter, which computes orientation
+  filter.updateIMU(gx, gy, gz, ax, ay, az);
+
+  // Read the temperature from the IMU sensor
+  if (IMU.temperatureAvailable())
   {
-
-    // read raw data from IMU
-    IMU.readAcceleration(aix, aiy, aiz);
-    IMU.readGyroscope(gix, giy, giz);
-
-    // convert from raw data to gravity and degrees/second units
-    ax = convertRawAcceleration(aix);
-    ay = convertRawAcceleration(aiy);
-    az = convertRawAcceleration(aiz);
-    gx = convertRawGyro(gix);
-    gy = convertRawGyro(giy);
-    gz = convertRawGyro(giz);
-
-    // update the filter, which computes orientation
-    filter.updateIMU(gx, gy, gz, ax, ay, az);
-
-    // Read the temperature from the IMU sensor
-    if (IMU.temperatureAvailable())
-    {
-      IMU.readTemperature(temperature);
-
-      // Control RGB LED based on the temperature
-      if (!(temperature >= 20 && temperature <= 32))
-      {
-        alert = true;
-      }
-    }
-
-    // print the heading, pitch and roll
-    roll = filter.getRoll();
-    pitch = filter.getPitch();
-    heading = filter.getYaw();
-    if (counter % 50 == 0)
-    {
-      Serial.print("Orientation: ");
-      Serial.print(heading);
-      Serial.print(" ");
-      Serial.print(pitch);
-      Serial.print(" ");
-      Serial.println(roll);
-      // Print the temperature to the serial monitor
-      Serial.print("Temperature: ");
-      Serial.print(temperature);
-      Serial.println(" °C");
-      counter = 0;
-    }
-    if (pitch < -100 || pitch > -80)
-    {
-      alert = true;
-    }
-
-    if (alert)
-    {
-      digitalWrite(LEDR, HIGH);
-      digitalWrite(LEDG, LOW);
-    }
-    else
-    {
-      digitalWrite(LEDR, LOW);
-      digitalWrite(LEDG, HIGH);
-    }
-    // increment previous time, so we keep proper pace
-    microsPrevious = microsPrevious + microsPerReading;
-    counter++;
+    IMU.readTemperature(temperature);
   }
+
+  // Control RGB LED based on the temperature
+  if (temperature < 20 || temperature > 32)
+  {
+    alert = true;
+  }
+
+  // print the heading, pitch and roll
+  roll = filter.getRoll();
+  pitch = filter.getPitch();
+  heading = filter.getYaw();
+  if (counter % 500 == 0)
+  {
+    Serial.print("Orientation: ");
+    Serial.print(heading);
+    Serial.print(" ");
+    Serial.print(pitch);
+    Serial.print(" ");
+    Serial.println(roll);
+    // Print the temperature to the serial monitor
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+    counter = 0;
+  }
+  if (pitch < -100 || pitch > -80)
+  {
+    alert = true;
+  }
+
+  if (alert)
+  {
+    digitalWrite(LEDR, HIGH);
+    digitalWrite(LEDG, LOW);
+  }
+  else
+  {
+    digitalWrite(LEDR, LOW);
+    digitalWrite(LEDG, HIGH);
+  }
+  counter++;
 }
 
 float convertRawAcceleration(int aRaw)
